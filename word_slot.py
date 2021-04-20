@@ -9,11 +9,12 @@ class WordSlot:
   [direction] - a string that represents orientation of WordSlot. Could either
               be ACROSS or DOWN
   [length] - an integer representing the length of the empty slot.
-  [Overlap] - a list of ids (integers) of other WordSlot objects that overlap
-            with this WordSlot object on the crossword layout. Initialized as
+  [Overlap] - a list of (id, row, col) triplets -- id is the id of the WordSlot object that overlaps,
+              and (row, col) is the location of this overlap in the crossword
+              with this WordSlot object on the crossword layout. Initialized as
             an empty list.
-  [Word] - a string that represents the legitimate word that belongs in the  
-          empty slot. Initialized as empty string.
+  [Words] - a list of python dictionaries, each of which represent a legitimate word that can belong 
+            in the empty slot. Initialized as None.
   [Definition] - a string that is the legitimate corresponding definition of the
               word. Intialized as empty string.
   """
@@ -23,14 +24,17 @@ class WordSlot:
     self.direction = direction
     self.length = length
     self.overlap = []
-    self.word = ""
+    self.words = None
     self.definition = ""
 
   def __repr__(self):
     """
     Object representation when printed out.
     """
-    return "Start: " + str(self.start) + ", Dir: " + self.direction + ", Length: " + str(self.length) +", Overlap: " + str(self.overlap) + "\n"
+    return "Start: " + str(self.start) + ", Dir: " + self.direction + \
+      ", Length: " + str(self.length) + ", Overlap: " + str(self.overlap) + \
+      ", Words: " + (str([i['word'] for i in self.words]) if self.words is not None else "None") + "\n"
+  
   
   def get_start(self, ind = 3):
     """
@@ -60,15 +64,15 @@ class WordSlot:
   def get_overlap(self):
       return self.overlap
 
-  def set_word(self, word):
+  def set_words(self, words):
     """
-    Input:  [word] - String that represents legitimate word that belongs in the
+    Input:  [words] - String that represents legitimate word that belongs in the
                     following slot.
     """
-    self.word = word
+    self.words = words
   
-  def get_word(self):
-    return self.word
+  def get_words(self):
+    return self.words
   
   def set_definition(self, definition):
     """

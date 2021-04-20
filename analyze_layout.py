@@ -1,7 +1,6 @@
 import json
 import requests
 import random
-from collections import OrderedDict
 from word_slot import WordSlot
     
 
@@ -34,7 +33,7 @@ def find_overlap(slot_id, word_slots):
     """
     Finds other slots that overlap with the slot associated with slot_id.
     Input:  [slot_id] - id of slot we are trying to detect overlaps for
-            [word_slots] - Dictionary of {id: WordSlot} pairs that need to be
+            [word_slots] - List of WordSlot objects that need to be
                         defined/filled out
     """
     # slot_id information
@@ -43,8 +42,8 @@ def find_overlap(slot_id, word_slots):
     word_col = word_slots[slot_id].get_start(1)
 
     # Check every horizontal slot in word_slots if it overlaps with slot_id
-    for key in word_slots:
-        slot = word_slots[key]
+    for i in range(len(word_slots)):
+        slot = word_slots[i]
         if slot.get_direction() == "ACROSS":
             # Current horizontal slot information
             start_col = slot.get_start(1)
@@ -52,8 +51,11 @@ def find_overlap(slot_id, word_slots):
             dict_row = slot.get_start(0)
             if word_col >= start_col and word_col <= end_col:
                 if dict_row >= start_row and dict_row <= end_row:
-                    word_slots[slot_id].add_overlap(key)
-                    word_slots[key].add_overlap(slot_id)
+                    # Here, there is an overlap at location (dict_row, word_col)
+                    # between two WordSlots, with id i and slot_id.
+                    # Each overlap entry is a triplet -- (id, row, col)
+                    word_slots[slot_id].add_overlap((i, dict_row, word_col))
+                    slot.add_overlap((slot_id, dict_row, word_col))
 
 
 def analyze_layout(layout):
@@ -63,12 +65,11 @@ def analyze_layout(layout):
             Example: [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]]
                     [[1,1,1,1], [1,0,1,0], [1,0,1,0], [1,0,1,0]]
 
-    Ouput:  [word_slots] - Dictionary of {id: WordSlot} pairs that need to be
+    Ouput:  [word_slots] - List of WordSlot objects that need to be
                         defined/filled out
     """
     num_rows, num_cols = len(layout), len(layout[0])
-    word_slots = OrderedDict()
-    id_count = 0
+    word_slots = []
     # Find all horizontal/"across" word slots in the layout
     mode = "ACROSS"
     temp_array = [row[:] for row in layout] # Copy of layout
@@ -78,8 +79,7 @@ def analyze_layout(layout):
             if temp_array[i][j] > 0: # Start index of word detected
                 slot_len = find_word(i, j, temp_array, mode)
                 if slot_len > 1:
-                    word_slots[id_count] = WordSlot((i, j), mode, slot_len)
-                    id_count += 1
+                    word_slots.append(WordSlot((i, j), mode, slot_len))
                 j += max(1, slot_len + 1)
             else:
                 j += 1
@@ -92,9 +92,8 @@ def analyze_layout(layout):
             if temp_array[j][i] > 0: # Start index of word detected
                 slot_len = find_word(j, i, temp_array, mode)
                 if slot_len > 1:
-                    word_slots[id_count] = WordSlot((j, i), mode, slot_len)
-                    find_overlap(id_count, word_slots)
-                    id_count += 1
+                    word_slots.append(WordSlot((j, i), mode, slot_len))
+                    find_overlap(len(word_slots) - 1, word_slots)
                 j += max(1, slot_len + 1)
             else:
                 j += 1
