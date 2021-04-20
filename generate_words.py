@@ -74,10 +74,10 @@ def create_crossword(word_slots, layout_cols, layout_rows):
     # (this only keeps track of the words that are currently IN USE in the crossword)
     filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
     i = 0
-
     # We iterate through the WordSlot array and fill every WordSlot object 
     # with a set of legitimate words that fit all constraints.
     while i < len(word_slots):
+        restart = False
         # Get info on current WordSlot
         start_row, start_col = word_slots[i].get_start()
         word_len = word_slots[i].get_length()
@@ -125,30 +125,45 @@ def create_crossword(word_slots, layout_cols, layout_rows):
             # Set the words to be None (so it will be re-initialized later)
             word_slots[i].set_words(None)
 
-            # Keep going "backwards" in WordSlot array until we reach a word that has 
-            # alternative options to pick -- on the way, set any [] or 1-member word lists to be None
-            # so they can be reset
-            i = i - 1
-            cur_words = word_slots[i].get_words()
-            while len(cur_words) < 2:
-                erase_word(filled_layout, i, word_slots)
-                seen_words.remove(cur_words[-1]["word"])
-                word_slots[i].set_words(None)
-                i = i - 1
-                cur_words = word_slots[i].get_words()
+            # We go "backwards" by picking a WordSlot that overlaps with the current WordSlot 
+            # that also has alternative words to pick. Once this is found, we reset every
+            # WordSlot after this overlapped WordSlot.
+            word_overlaps = word_slots[i].get_overlap()
+            j = len(word_overlaps) - 1
+            found_overlap = False
+            while j >= 0 and found_overlap == False:
+                cur_overlap = word_overlaps[j][0]
+                cur_words = word_slots[cur_overlap].get_words()
+                if cur_overlap < i and cur_words is not None and len(cur_words) >= 2:
+                    for k in range(cur_overlap + 1, i):
+                        seen_words.remove(word_slots[k].get_words()[-1]["word"])
+                        erase_word(filled_layout, k, word_slots)
+                        word_slots[k].set_words(None)
+                    i = cur_overlap
+                    found_overlap = True
+                j -= 1
+                
+            # If no overlap with alternatives have been found, we just start over from the beginning.
+            if found_overlap == False:
+                print("No solution found, restarting... \n")
+                restart = True
+                i = -1
+                for j in range(len(word_slots)):
+                    word_slots[j].set_words(None)
+                seen_words = set()
+                filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
             # The current word in use is always the last word picked, so we pop it off the list
             # and erase that word from both seen_words (not used anymore) and from the crossword layout
-            removed_word = cur_words.pop()
-            seen_words.remove(removed_word["word"])
-            word_slots[i].set_words(cur_words)
-        
-        # Pick a word; by convention, we always pick the last word in the wordlist for a WordSlot object,
-        # write it to the layout, and add to seen_words
-        rand_word = cur_words[-1]
-        write_word(filled_layout, word_slots[i])
-        seen_words.add(rand_word["word"])
-
-
+            else:
+                removed_word = cur_words.pop()
+                seen_words.remove(removed_word["word"])
+                word_slots[i].set_words(cur_words)
+        if restart == False:
+            # Pick a word; by convention, we always pick the last word in the wordlist for a WordSlot object,
+            # write it to the layout, and add to seen_words
+            rand_word = cur_words[-1]
+            write_word(filled_layout, word_slots[i])
+            seen_words.add(rand_word["word"])
         i += 1
         
     return filled_layout
