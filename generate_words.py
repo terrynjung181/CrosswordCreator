@@ -3,7 +3,33 @@ import requests
 import random
 from word_slot import WordSlot
 
-def write_word(layout, word_obj):
+def find_next_slot(layout, done_slots, word_slots, seen_words):
+    """
+    Decides next WordSlot to fill in our current layout
+    Input:      [layout] - the 2D matrix containing the current crossword layout
+                [done_slots] - the list of WordSlot ids that have already been filled
+                [seen_words] - the set of words that have already been placed
+
+    Output:     [cur_min_ind] - the WordSlot id to fill in next
+                [cur_min] - the number of word possibilities for the WordSlot with id cur_min_ind
+    """
+
+    # We always want to fill the most constrained WordSlot next. To do this, we simply 
+    # loop over every unfilled WordSlot and see how many words can be placed in each one, with our 
+    # current crossword layout. We return the WordSlot with minimum number of words
+    cur_min_ind = 0
+    cur_min = 1000
+    for i in range(len(word_slots)):
+        if i not in done_slots:
+            num_words = len(fetch_words(word_slots[i], layout, seen_words))
+            if num_words < cur_min:
+                cur_min_ind = i
+                cur_min = num_words
+
+    return cur_min_ind, cur_min
+    
+
+def write_word(layout, word_obj, word_to_write):
     """
     Writes a chosen word to our current crossword layout
     Input:      [layout] - the 2D matrix containing the current crossword layout
@@ -11,15 +37,14 @@ def write_word(layout, word_obj):
 
     """
     # Get word to write, word length, and direction from word_obj
-    word_to_write = word_obj.get_words()[-1] #Chosen word is always last word
     start_row, start_col = word_obj.get_start()
     word_len = word_obj.get_length()
     direction = word_obj.get_direction()
     row = start_row
     col = start_col
     # Iterate over layout and write each character
-    for j in range(len(word_to_write["word"])):
-        layout[row][col] = word_to_write["word"][j]
+    for j in range(len(word_to_write)):
+        layout[row][col] = word_to_write[j]
         if direction == "ACROSS":
             col += 1
         else:
@@ -56,6 +81,64 @@ def erase_word(layout, word_id, word_slots):
         else:
             row += 1
 
+def fetch_words(wordslot, layout, seen_words):
+    """
+    Fetch all words possible for a particular WordSlot object in the current crossword layout.
+    Input:      [wordslot] - the WordSlot object to fill words for
+                [layout] - the 2D matrix containing the current crossword layout
+                [seen_words] - the set of words that have already been placed    
+
+    Output:     [final_list] - A 2D list describing the set of words that can fit this WordSlot.
+                               Each entry is in the form [word, score], where word is a python dictionary
+                               describing the actual word and its definitions, and score is the current 
+                               numerical score of that word (all scores are set to 0, 
+                               they will be populated later).
+    """
+
+    # First, we gather relevant information on the current WordSlot and pick up its partial string
+    # in the curren layout
+    start_row, start_col = wordslot.get_start()
+    word_len = wordslot.get_length()
+    direction = wordslot.get_direction()
+    row, col = start_row, start_col
+    partial_str = ""
+    for j in range(word_len):
+        partial_str += layout[row][col]
+        if direction == "ACROSS":
+            col += 1
+        else:
+            row += 1
+
+    # Now, we query dictionary based on the character constraints defined above
+    word_url = "https://api.datamuse.com/words?sp=" + partial_str + "&md=d"
+    word_data = requests.get(word_url)
+    word_json = json.loads(word_data.text)
+    j = 0
+
+    # The DataMuse API returns a list of python dictionaries; each dictionary is a single word,
+    # along with all of its definitions. Unfortunately, some words have no definitions, so
+    # we simply remove them. Additionally, we remove all words that are already on the crossword layout.
+    # Finally, DataMuse does not count spaces in its word length, (e.g. "et al" is considered a word with
+    # 4 letters). Thus, we strip whitespace from every legal word to make sure word lengths are aligned.
+    while j < len(word_json):
+        if "defs" not in word_json[j] or word_json[j]["word"] in seen_words:
+            del word_json[j]
+        else:
+            word_json[j]["word"] = word_json[j]["word"].replace(" ", "")
+            j += 1
+
+    # Our list of word dictionaries at this point will be ~80 words; we sample at most 10 of them 
+    # to store in our word list for the WordSlot object (for speed).
+    # The number 10 is basically a magic number, but this was the number recommended by this paper:
+    # https://www.aaai.org/Papers/AAAI/1990/AAAI90-032.pdf
+    cur_list = random.sample(word_json, min(10, len(word_json)))
+    final_list = []
+
+    # Set scores for each word initially set to 0
+    for word in cur_list:
+        final_list.append([word, 0])
+    return final_list
+
 
 def create_crossword(word_slots, layout_cols, layout_rows):
     """
@@ -71,74 +154,64 @@ def create_crossword(word_slots, layout_cols, layout_rows):
                             with legitimate words
     """
     seen_words = set() # This ensures that no word is written on the crossword twice
-    # (this only keeps track of the words that are currently IN USE in the crossword)
+    # (Not that this only keeps track of the words that are currently IN USE in the crossword)
+
+    done_slots = [] # Keeps track of WordSlots who have valid words currently written to the crossword layout
     filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
-    i = 0
-    # We iterate through the WordSlot array and fill every WordSlot object 
-    # with a set of legitimate words that fit all constraints.
-    while i < len(word_slots):
+
+    # We keep iterating until every WordSlot has a legal word that can be placed in the layout
+    while len(done_slots) < len(word_slots):
+        i, _ = find_next_slot(filled_layout, done_slots, word_slots, seen_words)
         restart = False
-        # Get info on current WordSlot
-        start_row, start_col = word_slots[i].get_start()
-        word_len = word_slots[i].get_length()
-        direction = word_slots[i].get_direction()
-        row, col = start_row, start_col
-        
-        # If words is None, we need to query the dictionary to get a set of words
+
+        # If words is None, we need to query the dictionary to get a set of words for this WordSlot
         if word_slots[i].get_words() is None:
-            # Read the current layout to get set of characters that already exist
-            # where our word has to be -- this defines the character constraints our
-            # words must have at this location
-            partial_str = ""
-            for j in range(word_len):
-                partial_str += filled_layout[row][col]
-                if direction == "ACROSS":
-                    col += 1
-                else:
-                    row += 1
 
-            # Now, we query dictionary based on the character constraints defined above
-            word_url = "https://api.datamuse.com/words?sp=" + partial_str + "&md=d"
-            word_data = requests.get(word_url)
-            word_json = json.loads(word_data.text)
-            j = 0
-            # The DataMuse API returns a list of python dictionaries; each dictionary is a single word,
-            # along with all of its definitions. Unfortunately, some words have no definitions, so
-            # we simply remove them. Additionally, we remove all words that are already on the crossword layout
-            while j < len(word_json):
-                if "defs" not in word_json[j] or word_json[j]["word"] in seen_words:
-                    del word_json[j]
-                else:
-                    j += 1
-            # Our list of word dictionaries at this point will be ~80 words; we sample at most 20 of them 
-            # to store in our word list for the WordSlot object (for speed)
-            final_list = random.sample(word_json, min(20, len(word_json)))
-            word_slots[i].set_words(final_list)
+            final_list = fetch_words(word_slots[i], filled_layout, seen_words)
+
+            # final_list gives the set of words with uninitialized scores; we now "look ahead"
+            # to assign numerical scores for each word in final_list (heuristic #2)
+            for j in range(len(final_list)):
+                write_word(filled_layout, word_slots[i], final_list[j][0]["word"])
+                done_slots.append(i)
+                _, score = find_next_slot(filled_layout, done_slots, word_slots, seen_words)
+                final_list[j][1] = score
+                erase_word(filled_layout, i, word_slots)
+                done_slots.pop()
+            # Sort the list by score, ascending order (last word is always most optimal word to pick)
+            final_list.sort(key=lambda x:x[1])
+            
             # This sets a list of at most 20 words that can fit the current crossword at a particular WordSlot
+            word_slots[i].set_words(final_list)
 
-        # Get current words from WordSlot objects
+        # At this point, the WordSlot object has at least attempted to find words (words is not None)
         cur_words = word_slots[i].get_words()
-
         # If the words is empty (DIFFERENT from None) then there are simply no words that fit the 
         # current character constraints -- we need to go backward and change words
         if cur_words == []:
+
             # Set the words to be None (so it will be re-initialized later)
             word_slots[i].set_words(None)
 
             # We go "backwards" by picking a WordSlot that overlaps with the current WordSlot 
             # that also has alternative words to pick. Once this is found, we reset every
-            # WordSlot after this overlapped WordSlot.
+            # WordSlot after this overlapped WordSlot and erase those words from the layout.
             word_overlaps = word_slots[i].get_overlap()
             j = len(word_overlaps) - 1
             found_overlap = False
+
+            # Iterate through all overlaps
             while j >= 0 and found_overlap == False:
                 cur_overlap = word_overlaps[j][0]
                 cur_words = word_slots[cur_overlap].get_words()
-                if cur_overlap < i and cur_words is not None and len(cur_words) >= 2:
-                    for k in range(cur_overlap + 1, i):
-                        seen_words.remove(word_slots[k].get_words()[-1]["word"])
-                        erase_word(filled_layout, k, word_slots)
-                        word_slots[k].set_words(None)
+                if cur_overlap in done_slots and cur_words is not None and len(cur_words) >= 2:
+                    # We found a suitable overlap; erase everything beyond that overlap
+                    overlap_ind = done_slots.index(cur_overlap)
+                    for k in range(overlap_ind, len(done_slots)):
+                        seen_words.remove(word_slots[done_slots[k]].get_best_word())
+                        erase_word(filled_layout, done_slots[k], word_slots)
+                        word_slots[done_slots[k]].set_words(None)
+                    del done_slots[overlap_ind:]
                     i = cur_overlap
                     found_overlap = True
                 j -= 1
@@ -147,23 +220,26 @@ def create_crossword(word_slots, layout_cols, layout_rows):
             if found_overlap == False:
                 print("No solution found, restarting... \n")
                 restart = True
-                i = -1
                 for j in range(len(word_slots)):
                     word_slots[j].set_words(None)
                 seen_words = set()
+                done_slots = []
                 filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
-            # The current word in use is always the last word picked, so we pop it off the list
-            # and erase that word from both seen_words (not used anymore) and from the crossword layout
+
+            # If an alternative has been found, note that current word in use is always the last word 
+            # picked, so we pop it off the list and erase that word from both seen_words 
+            # (not used anymore) and from the crossword layout
             else:
                 removed_word = cur_words.pop()
-                seen_words.remove(removed_word["word"])
                 word_slots[i].set_words(cur_words)
+
         if restart == False:
-            # Pick a word; by convention, we always pick the last word in the wordlist for a WordSlot object,
-            # write it to the layout, and add to seen_words
-            rand_word = cur_words[-1]
-            write_word(filled_layout, word_slots[i])
-            seen_words.add(rand_word["word"])
-        i += 1
+            # If we are not restarting, then we pick a word to write (always the last word),
+            # in the wordlist for a WordSlot object, write it to the layout, and add to seen_words.
+            # Then, we can add this WordSlot id to done_slots
+            best_word = word_slots[i].get_best_word()
+            write_word(filled_layout, word_slots[i], best_word)
+            seen_words.add(best_word)
+            done_slots.append(i)
         
     return filled_layout

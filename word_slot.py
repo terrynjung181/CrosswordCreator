@@ -13,8 +13,9 @@ class WordSlot:
               and (row, col) is the location of this overlap in the crossword
               with this WordSlot object on the crossword layout. Initialized as
             an empty list.
-  [Words] - a list of python dictionaries, each of which represent a legitimate word that can belong 
-            in the empty slot. Initialized as None.
+  [Words] - a 2D list, each entry in the form [word, score], where word is a python dictionary
+            representing a legitimate word that can belong in the empty slot along with its definitions,
+            while score is the current score of that word. Initialized as None.
   [Definition] - a string that is the legitimate corresponding definition of the
               word. Intialized as empty string.
   """
@@ -33,7 +34,7 @@ class WordSlot:
     """
     return "Start: " + str(self.start) + ", Dir: " + self.direction + \
       ", Length: " + str(self.length) + ", Overlap: " + str(self.overlap) + \
-      ", Words: " + (str([i['word'] for i in self.words]) if self.words is not None else "None") + "\n"
+      ", Words: " + (str([i[0]['word'] for i in self.words]) if self.words is not None else "None") + "\n"
   
   
   def get_start(self, ind = 3):
@@ -73,6 +74,11 @@ class WordSlot:
   
   def get_words(self):
     return self.words
+  
+  def get_best_word(self):
+
+    # The best word available is the last word in the word array; we return only the string
+    return self.words[-1][0]["word"]
   
   def set_definition(self, definition):
     """
