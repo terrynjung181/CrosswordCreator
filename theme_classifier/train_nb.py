@@ -4,8 +4,7 @@ from sklearn.datasets import fetch_20newsgroups
 from naive_bayes import NaiveBayes
 
 def train_nb(filename):
-    categories=['sci.space', 'sci.electronics', 'talk.politics.guns', 'sci.med', 'comp.graphics',
-                'rec.sport.baseball', 'talk.religion.misc', 'rec.autos', 'misc.forsale', 'talk.politics.misc']
+    categories=['sci.med', 'sci.electronics', 'talk.religion.misc', 'talk.politics.misc', 'misc.forsale']
     newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
     print(newsgroups_train.target_names)
     # ['comp.windows.x', 'rec.autos', 'rec.sport.baseball', 'sci.space', 'talk.politics.misc', 'talk.religion.misc']
@@ -18,7 +17,8 @@ def train_nb(filename):
 
     nb.train(train_data, train_labels)
 
-    with open(os.path.join("trained_models", filename), "wb") as f:
+    with open(os.path.join("pkl_storage", filename), "wb") as f:
         pickle.dump(nb, f)
 
-train_nb("trained_nb.pkl")
+if __name__ == "__main__":
+    train_nb("trained_nb.pkl")

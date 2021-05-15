@@ -34,7 +34,7 @@ class WordSlot:
     """
     return "Start: " + str(self.start) + ", Dir: " + self.direction + \
       ", Length: " + str(self.length) + ", Overlap: " + str(self.overlap) + \
-      ", Words: " + (str([i[0]['word'] for i in self.words]) if self.words is not None else "None") + "\n"
+      ", Words: " + (str([i[0] for i in self.words]) if self.words is not None else "None") + "\n"
   
   
   def get_start(self, ind = 3):
@@ -78,7 +78,7 @@ class WordSlot:
   def get_best_word(self):
 
     # The best word available is the last word in the word array; we return only the string
-    return self.words[-1][0]["word"]
+    return self.words[-1][0]
   
   def set_definition(self, definition):
     """

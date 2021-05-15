@@ -1,9 +1,10 @@
 import json
 import requests
 import random
+from re import match
 from word_slot import WordSlot
 
-def find_next_slot(layout, done_slots, word_slots, seen_words):
+def find_next_slot(layout, done_slots, word_slots, seen_words, theme_words):
     """
     Decides next WordSlot to fill in our current layout
     Input:      [layout] - the 2D matrix containing the current crossword layout
@@ -21,7 +22,7 @@ def find_next_slot(layout, done_slots, word_slots, seen_words):
     cur_min = 1000
     for i in range(len(word_slots)):
         if i not in done_slots:
-            num_words = len(fetch_words(word_slots[i], layout, seen_words))
+            num_words = len(fetch_words(word_slots[i], layout, seen_words,theme_words))
             if num_words < cur_min:
                 cur_min_ind = i
                 cur_min = num_words
@@ -81,7 +82,7 @@ def erase_word(layout, word_id, word_slots):
         else:
             row += 1
 
-def fetch_words(wordslot, layout, seen_words):
+def fetch_words(wordslot, layout, seen_words, theme_dict):
     """
     Fetch all words possible for a particular WordSlot object in the current crossword layout.
     Input:      [wordslot] - the WordSlot object to fill words for
@@ -109,29 +110,40 @@ def fetch_words(wordslot, layout, seen_words):
         else:
             row += 1
 
-    # Now, we query dictionary based on the character constraints defined above
-    word_url = "https://api.datamuse.com/words?sp=" + partial_str + "&md=d"
-    word_data = requests.get(word_url)
-    word_json = json.loads(word_data.text)
-    j = 0
+    # # Now, we query dictionary based on the character constraints defined above
+    # word_url = "https://api.datamuse.com/words?sp=" + partial_str + "&md=d"
+    # word_data = requests.get(word_url)
+    # word_json = json.loads(word_data.text)
+    # j = 0
+    regex_str = "^("
+    for char in partial_str:
+        if char == "?":
+            regex_str += "[a-z]"
+        else:
+            regex_str += char
+    regex_str += ")$"
+
+    available_words = list(filter(lambda v: match(regex_str, v), theme_dict))
+    available_words = [i for i in available_words if i not in seen_words]
+
 
     # The DataMuse API returns a list of python dictionaries; each dictionary is a single word,
     # along with all of its definitions. Unfortunately, some words have no definitions, so
     # we simply remove them. Additionally, we remove all words that are already on the crossword layout.
     # Finally, DataMuse does not count spaces in its word length, (e.g. "et al" is considered a word with
     # 4 letters). Thus, we strip whitespace from every legal word to make sure word lengths are aligned.
-    while j < len(word_json):
-        if "defs" not in word_json[j] or word_json[j]["word"] in seen_words:
-            del word_json[j]
-        else:
-            word_json[j]["word"] = word_json[j]["word"].replace(" ", "")
-            j += 1
+    # while j < len(word_json):
+    #     if "defs" not in word_json[j] or word_json[j]["word"] in seen_words:
+    #         del word_json[j]
+    #     else:
+    #         word_json[j]["word"] = word_json[j]["word"].replace(" ", "")
+    #         j += 1
 
     # Our list of word dictionaries at this point will be ~80 words; we sample at most 10 of them 
     # to store in our word list for the WordSlot object (for speed).
     # The number 10 is basically a magic number, but this was the number recommended by this paper:
     # https://www.aaai.org/Papers/AAAI/1990/AAAI90-032.pdf
-    cur_list = random.sample(word_json, min(10, len(word_json)))
+    cur_list = random.sample(available_words, min(10, len(available_words)))
     final_list = []
 
     # Set scores for each word initially set to 0
@@ -140,7 +152,7 @@ def fetch_words(wordslot, layout, seen_words):
     return final_list
 
 
-def create_crossword(word_slots, layout_cols, layout_rows):
+def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
     """
     Given an ordered dictionary of WordSlot objects, the function will return
     a filled out layout with words from DataMuse.
@@ -161,20 +173,19 @@ def create_crossword(word_slots, layout_cols, layout_rows):
 
     # We keep iterating until every WordSlot has a legal word that can be placed in the layout
     while len(done_slots) < len(word_slots):
-        i, _ = find_next_slot(filled_layout, done_slots, word_slots, seen_words)
+        i, _ = find_next_slot(filled_layout, done_slots, word_slots, seen_words, theme_words)
         restart = False
 
         # If words is None, we need to query the dictionary to get a set of words for this WordSlot
         if word_slots[i].get_words() is None:
 
-            final_list = fetch_words(word_slots[i], filled_layout, seen_words)
-
+            final_list = fetch_words(word_slots[i], filled_layout, seen_words, theme_words)
             # final_list gives the set of words with uninitialized scores; we now "look ahead"
             # to assign numerical scores for each word in final_list (heuristic #2)
             for j in range(len(final_list)):
-                write_word(filled_layout, word_slots[i], final_list[j][0]["word"])
+                write_word(filled_layout, word_slots[i], final_list[j][0])
                 done_slots.append(i)
-                _, score = find_next_slot(filled_layout, done_slots, word_slots, seen_words)
+                _, score = find_next_slot(filled_layout, done_slots, word_slots, seen_words, theme_words)
                 final_list[j][1] = score
                 erase_word(filled_layout, i, word_slots)
                 done_slots.pop()
