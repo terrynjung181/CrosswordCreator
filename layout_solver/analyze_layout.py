@@ -68,8 +68,12 @@ def analyze_layout(layout):
     Ouput:  [word_slots] - List of WordSlot objects that need to be
                         defined/filled out
     """
+    if check_legal_layout(layout) == False:
+        return -1
+    
     num_rows, num_cols = len(layout), len(layout[0])
     word_slots = []
+    
     # Find all horizontal/"across" word slots in the layout
     mode = "ACROSS"
     temp_array = [row[:] for row in layout] # Copy of layout
@@ -83,6 +87,8 @@ def analyze_layout(layout):
                 j += max(1, slot_len + 1)
             else:
                 j += 1
+
+        
     # Find all vertical/"down" word slots in the layout
     mode = "DOWN"
     temp_array = [row[:] for row in layout] # Copy of layout
@@ -99,3 +105,28 @@ def analyze_layout(layout):
                 j += 1
     return word_slots
 
+def check_legal_layout(layout):
+    num_rows, num_cols = len(layout), len(layout[0])
+
+    found_something = False
+    for i in range(num_rows):
+        for j in range(num_cols):
+            if layout[i][j] == 1:
+                found_something = True
+                is_left = False
+                is_right = False
+                is_up = False
+                is_down = False
+                if i > 0:
+                    is_left = layout[i-1][j] == 1
+                if i < num_rows - 1:
+                    is_right = layout[i+1][j] == 1
+                if j > 0:
+                    is_up = layout[i][j-1] == 1
+                if j < num_cols - 1:
+                    is_down = layout[i][j+1] == 1
+
+                if not(is_left or is_right or is_up or is_down):
+                    return False
+    
+    return found_something
