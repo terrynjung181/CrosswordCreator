@@ -9,15 +9,15 @@ def run_intro_gui():
     CROSSWORD_SIZE = 450
     layout = [
         [sg.Text('Crossword Puzzle Using PySimpleGUI'), sg.Text('', key='-OUTPUT-')],
-        [sg.Graph(canvas_size=(CROSSWORD_SIZE, CROSSWORD_SIZE), graph_bottom_left=(0,0), graph_top_right=(CROSSWORD_SIZE,CROSSWORD_SIZE), key='-GRAPH-', background_color="red",
+        [sg.Graph(canvas_size=(CROSSWORD_SIZE, CROSSWORD_SIZE), graph_bottom_left=(0,0), graph_top_right=(CROSSWORD_SIZE,CROSSWORD_SIZE), key='-GRAPH-',
                 change_submits=True, drag_submits=False)],
+
         [sg.Button('Solve')]
     ]
 
     window = sg.Window('Window Title', layout, finalize=True)
 
     g = window['-GRAPH-']
-
     num_boxes = CROSSWORD_SIZE//BOX_SIZE
     rect_array = []
     for row in range(num_boxes):
@@ -59,19 +59,26 @@ def convert_to_mat(rect_array, num_boxes):
 
     return final_mat
 
-def run_exit_gui(initial_crossword, word_slots):
+def run_exit_gui(initial_crossword, word_slots, theme):
     BOX_SIZE = 75
     CROSSWORD_SIZE = 450
+    max_ind = 0
+    for i in range(len(word_slots)):
+        if max_ind < word_slots[i].get_index():
+            max_ind = word_slots[i].get_index()
+
     layout = [
-        [sg.Text('Crossword Puzzle Using PySimpleGUI'), sg.Text('', key='-OUTPUT-')],
-        [sg.Graph(canvas_size=(CROSSWORD_SIZE, CROSSWORD_SIZE), graph_bottom_left=(0,0), graph_top_right=(CROSSWORD_SIZE,CROSSWORD_SIZE), key='-GRAPH-', background_color="red",
-                change_submits=True, drag_submits=False)]
+        [sg.Text('Crossword Puzzle'), sg.Text('', key='-OUTPUT-')],
+        [sg.Text("THEME: " + theme)],
+        [sg.Graph(canvas_size=(CROSSWORD_SIZE, CROSSWORD_SIZE), graph_bottom_left=(0,0), graph_top_right=(CROSSWORD_SIZE,CROSSWORD_SIZE ), key='-GRAPH-', background_color="red",
+                change_submits=True, drag_submits=False)],
+        [sg.Text('ACROSS', size=(30,1)), sg.Text('DOWN', size=(30,1))],
+        [[sg.Text('', size=(30,2), key='-ACROSS-'+str(i)), sg.Text('', size=(30,2), key='-DOWN-'+str(i))] for i in range(1, max_ind+ 2)],
     ]
 
     window = sg.Window('Window Title', layout, finalize=True)
-
     g = window['-GRAPH-']
-
+    
     num_boxes = CROSSWORD_SIZE//BOX_SIZE
     rect_array = []
     for row in range(num_boxes):
@@ -90,9 +97,10 @@ def run_exit_gui(initial_crossword, word_slots):
         direction = word.get_direction()
         word_to_write = word.get_best_word()
         index_to_write = word.get_index()
+        clue_to_write = word.get_clue()
         i = 0
         while i < len(word_to_write):
-            g.draw_text(word_to_write[i], (start_x * BOX_SIZE + BOX_SIZE//2, start_y * BOX_SIZE + BOX_SIZE//2), font='Courier 15',color="black")
+            g.draw_text(word_to_write[i].upper(), (start_x * BOX_SIZE + BOX_SIZE//2, start_y * BOX_SIZE + BOX_SIZE//2), font='Courier 15',color="black")
             if i == 0:
                 g.draw_text(str(index_to_write), (start_x * BOX_SIZE + 0.1*(BOX_SIZE), start_y * BOX_SIZE + 0.8*(BOX_SIZE)), font='Courier 9',color="black")
             if direction == "ACROSS":
@@ -100,7 +108,8 @@ def run_exit_gui(initial_crossword, word_slots):
             else:
                 start_y -= 1
             i += 1
-
+        window['-' + direction + '-' + str(index_to_write)].update(str(index_to_write) + ". " + clue_to_write)
+        
 
     while True:             # Event Loop
         event, values = window.read()

@@ -1,3 +1,4 @@
+from calendar import c
 import json
 import requests
 import random
@@ -98,6 +99,7 @@ def fetch_words(wordslot, layout, seen_words, theme_dict):
 
     # First, we gather relevant information on the current WordSlot and pick up its partial string
     # in the curren layout
+    
     start_row, start_col = wordslot.get_start()
     word_len = wordslot.get_length()
     direction = wordslot.get_direction()
@@ -151,8 +153,17 @@ def fetch_words(wordslot, layout, seen_words, theme_dict):
         final_list.append([word, 0])
     return final_list
 
+def check_theme(cur_theme, word_list):
 
-def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
+    for word in word_list:
+        cur_len = word.get_length()
+        len_words = [i for i in cur_theme if len(i) == cur_len]
+        if len(len_words) < 200:
+            return False
+    return True
+
+
+def create_crossword(word_slots, layout_cols, layout_rows, all_theme_words):
     """
     Given an ordered dictionary of WordSlot objects, the function will return
     a filled out layout with words from DataMuse.
@@ -171,8 +182,37 @@ def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
     done_slots = [] # Keeps track of WordSlots who have valid words currently written to the crossword layout
     filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
 
+    theme_viable = False
+    theme_names = list(all_theme_words.keys())
+    while theme_viable == False and theme_names != []:
+        cur_theme_name = random.choice(theme_names)
+        cur_theme = [i[0] for i in all_theme_words[cur_theme_name]]
+        if not check_theme(cur_theme, word_slots):
+            theme_names.remove(cur_theme_name)
+        else:
+            theme_viable = True
+            theme_words = cur_theme
+            if cur_theme_name == 'sci.med':
+                cur_theme_name = "Medicine"
+            if cur_theme_name == 'sci.electronics':
+                cur_theme_name = "Electronics"
+            if cur_theme_name == 'talk.religion.misc':
+                cur_theme_name = "Religion"
+            if cur_theme_name == 'talk.politics.misc':
+                cur_theme_name = "Politics"
+            else:
+                cur_theme_name = "Sales Items"
+    if theme_viable == False:
+        theme_words = []
+        for theme in all_theme_words.keys():
+            theme_words.extend([i[0] for i in all_theme_words[theme]])
+        cur_theme_name = "Miscellaneous"
+
+    print(cur_theme_name)
     # We keep iterating until every WordSlot has a legal word that can be placed in the layout
+    num_iterations = 0
     while len(done_slots) < len(word_slots):
+
         i, _ = find_next_slot(filled_layout, done_slots, word_slots, seen_words, theme_words)
         restart = False
 
@@ -185,16 +225,24 @@ def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
             for j in range(len(final_list)):
                 write_word(filled_layout, word_slots[i], final_list[j][0])
                 done_slots.append(i)
-                _, score = find_next_slot(filled_layout, done_slots, word_slots, seen_words, theme_words)
-                final_list[j][1] = score
+                total_score = 1
+                seen_words.add(final_list[j][0])
+                print(word_slots[i])
+                for overlap, _, _ in word_slots[i].get_overlap():
+                    score = len(fetch_words(word_slots[overlap], filled_layout, seen_words, theme_words))
+                    total_score = total_score * score
+                final_list[j][1] = total_score
+                # _, score = find_next_slot(filled_layout, done_slots, word_slots, seen_words, theme_words)
+                # final_list[j][1] = score
                 erase_word(filled_layout, i, word_slots)
                 done_slots.pop()
+                seen_words.remove(final_list[j][0])
             # Sort the list by score, ascending order (last word is always most optimal word to pick)
             final_list.sort(key=lambda x:x[1])
             
             # This sets a list of at most 20 words that can fit the current crossword at a particular WordSlot
             word_slots[i].set_words(final_list)
-
+            print(final_list)
         # At this point, the WordSlot object has at least attempted to find words (words is not None)
         cur_words = word_slots[i].get_words()
         # If the words is empty (DIFFERENT from None) then there are simply no words that fit the 
@@ -229,21 +277,18 @@ def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
                 
             # If no overlap with alternatives have been found, we just start over from the beginning.
             if found_overlap == False:
-                print("No solution found, restarting... \n")
                 restart = True
-                for j in range(len(word_slots)):
-                    word_slots[j].set_words(None)
-                seen_words = set()
-                done_slots = []
-                filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
 
             # If an alternative has been found, note that current word in use is always the last word 
             # picked, so we pop it off the list and erase that word from both seen_words 
             # (not used anymore) and from the crossword layout
             else:
-                removed_word = cur_words.pop()
+                cur_words.pop()
                 word_slots[i].set_words(cur_words)
 
+        if num_iterations > 100:
+            restart = True
+        
         if restart == False:
             # If we are not restarting, then we pick a word to write (always the last word),
             # in the wordlist for a WordSlot object, write it to the layout, and add to seen_words.
@@ -252,5 +297,16 @@ def create_crossword(word_slots, layout_cols, layout_rows, theme_words):
             write_word(filled_layout, word_slots[i], best_word)
             seen_words.add(best_word)
             done_slots.append(i)
+            num_iterations = 0
+        else:
+            print("No solution found, restarting... \n")
+            for j in range(len(word_slots)):
+                word_slots[j].set_words(None)
+            seen_words = set()
+            done_slots = []
+            filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
+
+        num_iterations += 1
         
-    return filled_layout
+        
+    return filled_layout, cur_theme_name

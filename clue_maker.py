@@ -72,6 +72,7 @@ def find_clue(word):
     def_list = remove_num(def_list)
     def_list = split_def(def_list)
     def_list = clean_list(def_list)
+    return "".join(def_list)
     word_clue = None
     if len(def_list) == 0:
         return "NO CLUE"
