@@ -73,6 +73,8 @@ def find_clue(word):
     def_list = split_def(def_list)
     def_list = clean_list(def_list)
     word_clue = None
+    if len(def_list) == 0:
+        return "NO CLUE"
     while word_clue is None:
         temp_clue = def_list[random.randint(0, len(def_list)-1)]
         word_clue = replace_syn(temp_clue, word)
