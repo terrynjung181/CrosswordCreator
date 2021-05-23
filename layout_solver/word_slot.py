@@ -20,13 +20,15 @@ class WordSlot:
               word. Intialized as empty string.
   """
 
-  def __init__(self, start, direction, length):
+  def __init__(self, start, direction, length, index):
     self.start = start
     self.direction = direction
     self.length = length
     self.overlap = []
     self.words = None
     self.definition = ""
+    self.index = index
+    self.clue = None
 
   def __repr__(self):
     """
@@ -34,7 +36,8 @@ class WordSlot:
     """
     return "Start: " + str(self.start) + ", Dir: " + self.direction + \
       ", Length: " + str(self.length) + ", Overlap: " + str(self.overlap) + \
-      ", Words: " + (str([i[0] for i in self.words]) if self.words is not None else "None") + "\n"
+      ", Words: " + (str([i[0] for i in self.words]) if self.words is not None else "None") + \
+        ", Index: " + str(self.index) + ", Clue: " + str(self.clue) + "\n"
   
   
   def get_start(self, ind = 3):
@@ -89,3 +92,12 @@ class WordSlot:
   
   def get_definition(self):
     return self.definition
+
+  def get_index(self):
+    return self.index
+
+  def get_clue(self):
+    return self.clue
+  
+  def set_clue(self, clue):
+    self.clue = clue

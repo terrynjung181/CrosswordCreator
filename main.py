@@ -4,6 +4,7 @@ import pickle
 sys.path.append("layout_solver")
 sys.path.append("theme_classifier")
 from layout_solver import analyze_layout, generate_words
+from clue_maker import generate_clues
 from gui import run_intro_gui, run_exit_gui
 #test_mat = [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]]
 #test_mat = [[1,1,1,1], [1,0,1,0], [1,0,1,0], [1,0,1,0]]
@@ -20,6 +21,7 @@ with open(os.path.join("theme_classifier", "pkl_storage", "theme_dictionary.pkl"
 cur_theme_words = [i[0] for i in themed_words['misc.forsale']]
 print(len(cur_theme_words))
 new_layout = generate_words.create_crossword(word_dict, len(test_mat[0]), len(test_mat), cur_theme_words)
+generate_clues(word_dict)
 print(word_dict)
 print(new_layout)
 print("\n")

@@ -76,6 +76,7 @@ def analyze_layout(layout):
     
     # Find all horizontal/"across" word slots in the layout
     mode = "ACROSS"
+    across_ind = 1
     temp_array = [row[:] for row in layout] # Copy of layout
     for i in range(num_rows):
         j = 0
@@ -83,7 +84,8 @@ def analyze_layout(layout):
             if temp_array[i][j] > 0: # Start index of word detected
                 slot_len = find_word(i, j, temp_array, mode)
                 if slot_len > 1:
-                    word_slots.append(WordSlot((i, j), mode, slot_len))
+                    word_slots.append(WordSlot((i, j), mode, slot_len, across_ind))
+                    across_ind += 1
                 j += max(1, slot_len + 1)
             else:
                 j += 1
@@ -91,6 +93,7 @@ def analyze_layout(layout):
         
     # Find all vertical/"down" word slots in the layout
     mode = "DOWN"
+    down_ind = 1
     temp_array = [row[:] for row in layout] # Copy of layout
     for i in range(num_cols):
         j = 0
@@ -98,7 +101,8 @@ def analyze_layout(layout):
             if temp_array[j][i] > 0: # Start index of word detected
                 slot_len = find_word(j, i, temp_array, mode)
                 if slot_len > 1:
-                    word_slots.append(WordSlot((j, i), mode, slot_len))
+                    word_slots.append(WordSlot((j, i), mode, slot_len, down_ind))
+                    down_ind += 1
                     find_overlap(len(word_slots) - 1, word_slots)
                 j += max(1, slot_len + 1)
             else:
