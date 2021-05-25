@@ -115,11 +115,6 @@ def fetch_words(wordslot, layout, seen_words, theme_dict):
         else:
             row += 1
 
-    # # Now, we query dictionary based on the character constraints defined above
-    # word_url = "https://api.datamuse.com/words?sp=" + partial_str + "&md=d"
-    # word_data = requests.get(word_url)
-    # word_json = json.loads(word_data.text)
-    # j = 0
     regex_str = "^("
     for char in partial_str:
         if char == "?":

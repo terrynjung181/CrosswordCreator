@@ -215,20 +215,6 @@ class NaiveBayes:
 
 
 if __name__ == "__main__":
-    """
-    one = "Once I went to the park. I loved it there. It was so nice."
-    two = "I love to eat cake every day. Even when it is cold. Fuck me."
-    thr = "At first I was afraid, I was petrified. Kept thinking I could never live without you by my side."
-
-    fou = "This is pretty fun. Car door. It's so cold. I want to go eat some pussy."
-    fiv = "So if by the time the bar closes, and you feel like falling down, I'll carry you home tonight"
-    six = "Summer loving, had be a blast. Summer loving, happens so fast. I met a girl crazy for me."
-
-    sev = "Sleeping in bed is so warm and nice, especially when it is cold outside."
-    eig = "I love to play outside, but only if it's warm. I also like to climb trees"
-    nin = "This is crazy. I want to make thc into a dope ass organization. I wonder who will help me."
-    ten = "Making toy examples is fun, especially with the help of some sick bonking."
-    """
     one = "love love love cake love cake love cake." # love 5 cake 3
     two = "summer love summer love summer love" # summer 3 love 3
     thr = "day summer summer day summer love" # summer 3 day 2 love 1
@@ -249,8 +235,3 @@ if __name__ == "__main__":
     for cat in nb.class_counters:
         for w, val in nb.class_counters[cat].items():
             print(w, val, nb.class_bows[cat][w], nb.doc_counter[w], nb.idf_scores[w], nb.class_tf_idf[cat][w])
-    """
-    print(nb.class_counters)
-    print(nb.class_bows)
-    print(nb.class_tf_idf)
-    """

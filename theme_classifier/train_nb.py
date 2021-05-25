@@ -7,6 +7,7 @@ import time
 from naive_bayes import NaiveBayes
 
 def theme_extractor(categories, dictionary_file, nb_pkl):
+
     wiki_wiki = wikipediaapi.Wikipedia('en')
     with open(dictionary_file,"rb") as f:
         words_dict = json.load(f)
@@ -22,6 +23,8 @@ def theme_extractor(categories, dictionary_file, nb_pkl):
     print(categories)
     word_list = list(words_dict.keys())
     print(offset)
+
+    # Using Wikipedia, we go through each word, find a document, and input to NB
     for i in range(offset, len(word_list)):
         word = word_list[i]
         definition = words_dict[word]
@@ -51,7 +54,6 @@ def train_nb(filename):
     categories=['sci.med', 'sci.electronics', 'talk.religion.misc', 'talk.politics.misc', 'misc.forsale']
     newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
     sorted_categories = newsgroups_train.target_names
-    # ['comp.windows.x', 'rec.autos', 'rec.sport.baseball', 'sci.space', 'talk.politics.misc', 'talk.religion.misc']
     print(sorted_categories)
     train_data = newsgroups_train.data
     train_labels = newsgroups_train.target

@@ -22,7 +22,7 @@ for i in range(iterations):
         print("CROSSWORD LAYOUT BAD \n")
         exit(0)
     new_layout, theme_name = generate_words.create_crossword(word_dict, len(test_mat[0]), len(test_mat), themed_words, \
-                                                            1, 1, 1)
+                                                            1, 0, 0)
     toc = time.perf_counter()
     timer_array.append(toc - tic)
     print(toc - tic)

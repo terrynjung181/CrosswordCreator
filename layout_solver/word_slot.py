@@ -16,8 +16,8 @@ class WordSlot:
   [Words] - a 2D list, each entry in the form [word, score], where word is a python dictionary
             representing a legitimate word that can belong in the empty slot along with its definitions,
             while score is the current score of that word. Initialized as None.
-  [Definition] - a string that is the legitimate corresponding definition of the
-              word. Intialized as empty string.
+  [Clue] - a string that is the legitimate corresponding clue of the
+              word. Intialized as None.
   """
 
   def __init__(self, start, direction, length, index):

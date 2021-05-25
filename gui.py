@@ -5,6 +5,8 @@ import string
 from layout_solver.word_slot import WordSlot
 
 def run_intro_gui():
+
+    # Define layout
     BOX_SIZE = 75
     CROSSWORD_SIZE = 450
     layout = [
@@ -20,12 +22,15 @@ def run_intro_gui():
     g = window['-GRAPH-']
     num_boxes = CROSSWORD_SIZE//BOX_SIZE
     rect_array = []
+    
+    # Draw array of rectangles
     for row in range(num_boxes):
         row_array = []
         for col in range(num_boxes):
             row_array.append([g.draw_rectangle((col * BOX_SIZE , row * BOX_SIZE), (col * BOX_SIZE + BOX_SIZE, row * BOX_SIZE + BOX_SIZE), line_color='white', fill_color="black"), 0])
         rect_array.append(row_array)
 
+    # Use mouse events for rectangles to change color
     while True:             # Event Loop
         event, values = window.read()
         if event in (sg.WIN_CLOSED, 'Solve'):
@@ -49,6 +54,8 @@ def run_intro_gui():
     return convert_to_mat(rect_array, num_boxes)
 
 def convert_to_mat(rect_array, num_boxes):
+
+    # Switch from x-y coordinate system in GUI to row-col coordinate system for 2D matrix of 1s and 0s
     final_mat = []
     for i in range(num_boxes):
         row = []
@@ -60,6 +67,8 @@ def convert_to_mat(rect_array, num_boxes):
     return final_mat
 
 def run_exit_gui(initial_crossword, word_slots, theme):
+
+    # Define layout 
     BOX_SIZE = 75
     CROSSWORD_SIZE = 450
     max_ind = 0
@@ -79,6 +88,7 @@ def run_exit_gui(initial_crossword, word_slots, theme):
     window = sg.Window('Window Title', layout, finalize=True)
     g = window['-GRAPH-']
     
+    # Draw rectangles with black/white colors
     num_boxes = CROSSWORD_SIZE//BOX_SIZE
     rect_array = []
     for row in range(num_boxes):
@@ -91,6 +101,7 @@ def run_exit_gui(initial_crossword, word_slots, theme):
             
             rect_array.append(row_array)
 
+    # Write words and crossword index to corresponding rectangles
     for word in word_slots:
         start_y, start_x = word.get_start()
         start_y = num_boxes - start_y - 1
@@ -114,7 +125,7 @@ def run_exit_gui(initial_crossword, word_slots, theme):
     # Event Loop
     while True:             
         event, values = window.read()
-        if event in (sg.WIN_CLOSED, 'Solve'):
+        if event in (sg.WIN_CLOSED):
             break    
         
     window.close()
