@@ -133,6 +133,13 @@ def find_clue(word):
     def_list = insert_semicolon(def_list)
     def_list = split_def(def_list)
     def_list = clean_list(def_list)
+    i = 0
+    while i < len(def_list):
+        i_word = def_list[i].strip()
+        if i_word == '':
+            del def_list[i]
+        else:
+            i += 1
     word_clue = None
     if len(def_list) == 0:
         return generate_clues_with_api(word)
@@ -140,7 +147,6 @@ def find_clue(word):
         temp_clue = def_list[random.randint(0, len(def_list)-1)]
         word_clue = replace_syn(temp_clue, word)
     return word_clue.capitalize()
-
 
 def generate_clues(word_slots):
     for i in range(len(word_slots)):
