@@ -1,6 +1,8 @@
 from calendar import c
 import random
 from re import match
+
+from PySimpleGUI.PySimpleGUI import theme
 from word_slot import WordSlot
 
 def find_next_slot(layout, done_slots, word_slots, seen_words, theme_words, choice_optimize):
@@ -133,12 +135,12 @@ def fetch_words(wordslot, layout, seen_words, theme_dict):
         final_list.append([word, 0])
     return final_list
 
-def check_theme(cur_theme, word_list):
+def check_theme(cur_theme, word_list, threshold):
 
     for word in word_list:
         cur_len = word.get_length()
         len_words = [i for i in cur_theme if len(i) == cur_len]
-        if len(len_words) < 200:
+        if len(len_words) < threshold:
             return False
     return True
 
@@ -162,6 +164,9 @@ def create_crossword(word_slots, layout_cols, layout_rows, all_theme_words, choi
     done_slots = [] # Keeps track of WordSlots who have valid words currently written to the crossword layout
     filled_layout = [["?"] * layout_cols for _ in range(layout_rows)]
 
+    # Set hyperparameters
+    fetch_size = 10
+    theme_threshold = 150
     # Pick a valid theme for this crossword layout
     theme_viable = False
     theme_names = list(all_theme_words.keys())
@@ -169,7 +174,7 @@ def create_crossword(word_slots, layout_cols, layout_rows, all_theme_words, choi
     while theme_viable == False and theme_names != []:
         cur_theme_name = random.choice(theme_names)
         cur_theme = [i[0] for i in all_theme_words[cur_theme_name]]
-        if not check_theme(cur_theme, word_slots):
+        if not check_theme(cur_theme, word_slots, theme_threshold):
             theme_names.remove(cur_theme_name)
         else:
             theme_viable = True
@@ -185,7 +190,10 @@ def create_crossword(word_slots, layout_cols, layout_rows, all_theme_words, choi
             if cur_theme_name == 'misc.forsale':
                 cur_theme_name = "Sales Items"
     if theme_viable == False:
-        theme_words = [i[0] for i in all_theme_words['all_themes']]
+        theme_words = []
+        theme_names = list(all_theme_words.keys())
+        for i in theme_names:
+            theme_words.extend([x[0] for x in all_theme_words[i]])
         cur_theme_name = "Miscellaneous"
 
     # We keep iterating until every WordSlot has a legal word that can be placed in the layout
@@ -198,7 +206,7 @@ def create_crossword(word_slots, layout_cols, layout_rows, all_theme_words, choi
         if word_slots[i].get_words() is None:
 
             cur_list = fetch_words(word_slots[i], filled_layout, seen_words, theme_words)
-            final_list = random.sample(cur_list, min(10, len(cur_list)))
+            final_list = random.sample(cur_list, min(fetch_size, len(cur_list)))
 
             # If instantiate is not naie we need to sort these word candidates in some way
             if instantiate_optimize == 2 or instantiate_optimize == 1:
