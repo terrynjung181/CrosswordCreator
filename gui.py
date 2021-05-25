@@ -111,7 +111,8 @@ def run_exit_gui(initial_crossword, word_slots, theme):
         window['-' + direction + '-' + str(index_to_write)].update(str(index_to_write) + ". " + clue_to_write)
         
 
-    while True:             # Event Loop
+    # Event Loop
+    while True:             
         event, values = window.read()
         if event in (sg.WIN_CLOSED, 'Solve'):
             break    

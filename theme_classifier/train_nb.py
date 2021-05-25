@@ -14,7 +14,6 @@ def theme_extractor(categories, dictionary_file, nb_pkl):
     with open(nb_pkl, "rb") as f:
         nb = pickle.load(f)
 
-    # themes = {i: [] for i in categories}
     with open(os.path.join("pkl_storage", "theme_dictionary.pkl"), "rb") as f:
         themes = pickle.load(f)
     offset = 0
@@ -57,13 +56,13 @@ def train_nb(filename):
     train_data = newsgroups_train.data
     train_labels = newsgroups_train.target
 
-    # count = len(set(train_labels))
-    # nb = NaiveBayes(count)
+    count = len(set(train_labels))
+    nb = NaiveBayes(count)
 
-    # nb.train(train_data, train_labels)
+    nb.train(train_data, train_labels)
 
-    # with open(os.path.join("pkl_storage", filename), "wb") as f:
-    #     pickle.dump(nb, f)
+    with open(os.path.join("pkl_storage", filename), "wb") as f:
+        pickle.dump(nb, f)
 
     theme_extractor(sorted_categories, "dictionary.json", os.path.join("pkl_storage", filename))
 
