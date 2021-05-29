@@ -1,0 +1,6 @@
+requests==2.22.0
+Wikipedia_API==0.5.4
+nltk==3.6.2
+pandas==1.2.4
+PySimpleGUI==4.43.0
+scikit_learn==0.24.2
