@@ -1,3 +1,6 @@
+# Research and Findings
+You can find our final report about our research and findings here: [Final Report](https://github.com/terrynjung181/CrosswordCreator/blob/main/CS%204701%20Final%20Evaluation%20Written%20Report.pdf)
+
 # Installation
 
 To install required libraries, run the following command in a terminal shell:
@@ -24,8 +27,5 @@ To see timed performances, enter "python time_tests.py" or "python3 time_tests.p
 Files related to theme classification of words are in the "theme_classifier" folder; files relating to crossword solving are in the "layout_solver" folder; the file responsible for clue generation is "clue_maker.py".
 
 Enjoy!
-
-# Research and Findings
-You can find our final report about our research and findings here: [Final Report](https://github.com/terrynjung181/CrosswordCreator/blob/main/CS%204701%20Final%20Evaluation%20Written%20Report.pdf)
 
 -- Amit Rajesh, Terryn Jung, and Afnan Arshad
