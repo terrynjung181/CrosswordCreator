@@ -25,4 +25,7 @@ Files related to theme classification of words are in the "theme_classifier" fol
 
 Enjoy!
 
+# Research and Findings
+You can find our final report about our research and findings here: [Final Report](https://github.com/terrynjung181/CrosswordCreator/blob/main/CS%204701%20Final%20Evaluation%20Written%20Report.pdf)
+
 -- Amit Rajesh, Terryn Jung, and Afnan Arshad
